@@ -1,0 +1,38 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: Password
+      MYSQL_DATABASE: studentmanagementsystem
+    ports:
+      - "3306:3306"
+    
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pPassword"]
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend/fullstackdocker/fullstackdocker
+    ports:
+      - "8080:8080"
+    restart: on-failure 
+    depends_on:
+      db:
+        condition: service_healthy 
+    environment:
+      # CHANGED: 127.0.0.1 -> db
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/studentmanagementsystem
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Password
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    stdin_open: true 
+    tty: true
+    depends_on:
+      - backend
+    environment:
+      - CHOKIDAR_USEPOLLING=true
